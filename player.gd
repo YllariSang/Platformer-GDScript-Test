@@ -1,0 +1,398 @@
+extends CharacterBody2D
+
+var is_dashing = false
+var can_dash = true
+var dash_direction: Vector2 = Vector2.ZERO
+
+const DASH_SPEED = 900.0
+const DASH_DURATION = 0.12
+const DASH_COOLDOWN = 0.6
+
+var dash_time_left: float = 0.0
+var dash_cooldown_left: float = 0.0
+
+const SPEED = 300.0
+@export var JUMP_VELOCITY: float = -500.0
+@export var JUMP_VELOCITY_CROUCH: float = -350.0
+
+# Variable jump (hold to jump higher)
+@export var JUMP_HOLD_TIME: float = 0.14
+@export var JUMP_HOLD_STRENGTH: float = -700.0
+@export var JUMP_HOLD_STRENGTH_CROUCH: float = -350.0
+
+@export var COYOTE_TIME: float = 0.12
+@export var JUMP_BUFFER_TIME: float = 0.12
+
+var is_holding_jump: bool = false
+var jump_hold_time_left: float = 0.0
+var coyote_time_left: float = 0.0
+var jump_buffer_time_left: float = 0.0
+var _jump_was_crouched: bool = false
+
+var is_crouching: bool = false
+var crouch_tween: Tween = null
+
+# Optional collision shapes to swap when crouching. If your `player.tscn` has
+# a `CollisionShape2D` for standing and another named `CrouchCollisionShape2D`,
+# the script will toggle them automatically.
+@onready var standing_collision: CollisionShape2D = null
+@onready var crouch_collision: CollisionShape2D = null
+@onready var sprite_node: Node = null
+var original_sprite_scale: Vector2 = Vector2.ONE
+const CROUCH_SCALE = 0.5
+const CROUCH_TRANSITION = 0.12
+var original_collision_position: Vector2 = Vector2.ZERO
+var original_sprite_position: Vector2 = Vector2.ZERO
+var prev_is_crouching: bool = false
+var original_shape_size: Vector2 = Vector2.ZERO
+@onready var camera_node: Camera2D = null
+var original_camera_zoom: Vector2 = Vector2.ONE
+var original_collision_scale: Vector2 = Vector2.ONE
+@export var camera_scale_follow_sprite: bool = true
+@export var camera_scale_smoothing: float = 8.0
+@export var camera_min_scale_x: float = 0.01
+
+# Plunge: fast downward attack. Cannot be used while crouched.
+@export var PLUNGE_SPEED: float = 1200.0
+@export var PLUNGE_DURATION: float = 0.12
+@export var PLUNGE_COOLDOWN: float = 0.6
+
+var is_plunging: bool = false
+var plunge_time_left: float = 0.0
+var plunge_cooldown_left: float = 0.0
+var can_plunge: bool = true
+
+
+func _ready() -> void:
+	if has_node("CollisionShape2D"):
+		standing_collision = $CollisionShape2D
+		# record original shape size if it's a RectangleShape2D
+		if standing_collision.shape and standing_collision.shape is RectangleShape2D:
+			var rect = standing_collision.shape as RectangleShape2D
+			original_shape_size = rect.size
+		# record original collision position
+		original_collision_position = standing_collision.position
+		# record original collision node scale
+		original_collision_scale = standing_collision.scale
+	if has_node("CrouchCollisionShape2D"):
+		crouch_collision = $CrouchCollisionShape2D
+
+	if has_node("Sprite2D"):
+		sprite_node = $Sprite2D
+		# Node2D has `scale` and `position` so this works for Sprite2D and AnimatedSprite2D
+		original_sprite_scale = sprite_node.scale
+		original_sprite_position = sprite_node.position
+
+	# Ensure player is in the `player` group so pressure plates detect it
+	add_to_group("player")
+	if has_node("Camera2D"):
+		camera_node = $Camera2D
+		original_camera_zoom = camera_node.zoom
+
+
+func _physics_process(delta: float) -> void:
+	# Add the gravity.
+	if not is_on_floor():
+		velocity += get_gravity() * delta
+
+	# Update dash timers
+	if dash_time_left > 0.0:
+		dash_time_left -= delta
+		if dash_time_left <= 0.0:
+			is_dashing = false
+			dash_cooldown_left = DASH_COOLDOWN
+
+	if dash_cooldown_left > 0.0:
+		dash_cooldown_left -= delta
+		if dash_cooldown_left <= 0.0:
+			can_dash = true
+
+	# Update plunge timers
+	if plunge_time_left > 0.0:
+		plunge_time_left -= delta
+		if plunge_time_left <= 0.0:
+			is_plunging = false
+			plunge_cooldown_left = PLUNGE_COOLDOWN
+
+	if plunge_cooldown_left > 0.0:
+		plunge_cooldown_left -= delta
+		if plunge_cooldown_left <= 0.0:
+			can_plunge = true
+
+	# Update coyote time (grace period after stepping off edge)
+	if is_on_floor():
+		coyote_time_left = COYOTE_TIME
+	else:
+		coyote_time_left = max(coyote_time_left - delta, 0.0)
+
+	# Update jump buffer timer
+	if jump_buffer_time_left > 0.0:
+		jump_buffer_time_left -= delta
+		if jump_buffer_time_left < 0.0:
+			jump_buffer_time_left = 0.0
+
+	# Handle jump hold (variable jump height)
+	if is_holding_jump and jump_hold_time_left > 0.0 and Input.is_action_pressed("ui_accept") and not is_on_floor():
+		var strength = JUMP_HOLD_STRENGTH
+		if _jump_was_crouched:
+			strength = JUMP_HOLD_STRENGTH_CROUCH
+		# apply extra upward force while holding (strength is negative)
+		velocity.y += strength * delta
+		jump_hold_time_left -= delta
+	else:
+		# if hold timed out or button released, stop holding
+		is_holding_jump = false
+		jump_hold_time_left = 0.0
+
+	# Handle jump input with coyote time and jump buffering.
+	if Input.is_action_just_pressed("ui_accept"):
+		# If we can jump immediately (on floor or within coyote window), do it.
+		if is_on_floor() or coyote_time_left > 0.0:
+			_do_jump()
+		else:
+			# buffer the jump input until we land within the buffer window
+			jump_buffer_time_left = JUMP_BUFFER_TIME
+
+	# If a buffered jump exists and we now can jump, consume it
+	if jump_buffer_time_left > 0.0 and (is_on_floor() or coyote_time_left > 0.0):
+		_do_jump()
+		jump_buffer_time_left = 0.0
+
+	# If jump button released early, cut the upward velocity so jump is smaller
+	if Input.is_action_just_released("ui_accept"):
+		if is_holding_jump:
+			is_holding_jump = false
+			jump_hold_time_left = 0.0
+			if velocity.y < 0.0:
+				velocity.y *= 0.6
+
+	# Handle crouch input (hold to crouch). Requires InputMap action `crouch`.
+	# Allow crouching mid-air by setting crouch directly from input hold.
+	var want_crouch := Input.is_action_pressed("crouch")
+	is_crouching = want_crouch
+	# Note: collision will be scaled based on sprite scale via the tween.
+	# No immediate enabling/disabling of separate crouch shapes here.
+
+	# If crouch state changed, start a smooth transition tween for sprite & collision
+	if is_crouching != prev_is_crouching:
+		_start_crouch_tween(is_crouching)
+		prev_is_crouching = is_crouching
+
+	# Apply visual scaling for crouch if a sprite node exists
+	# immediate fallback: ensure correct scale if no tween system available
+	if not sprite_node:
+		# nothing to do
+		pass
+
+	# Plunge input (requires InputMap action `plunge`). Allow while crouched; must be airborne.
+	if Input.is_action_just_pressed("plunge") and can_plunge and not is_on_floor():
+		_start_plunge()
+
+
+	# Handle dash input (requires an InputMap action named "dash")
+	if Input.is_action_just_pressed("dash") and can_dash:
+		# Determine dash direction from player input or facing
+		var input_dir := Input.get_axis("left", "right")
+		var dir_x := 0.0
+		if input_dir != 0.0:
+			dir_x = input_dir
+		elif velocity.x != 0.0:
+			dir_x = sign(velocity.x)
+		else:
+			dir_x = 1.0
+
+		dash_direction = Vector2(dir_x, 0)
+		is_dashing = true
+		can_dash = false
+		dash_time_left = DASH_DURATION
+		# Optional: cancel vertical velocity to make dash feel snappier
+		velocity.y = 0.0
+		# play dash animation immediately if present
+		if sprite_node is AnimatedSprite2D:
+			(sprite_node as AnimatedSprite2D).play("dash")
+
+	# Movement: normal movement is disabled while dashing
+	if is_dashing:
+		velocity.x = dash_direction.x * DASH_SPEED
+	# Plunge: fast vertical downwards movement while in air
+	elif is_plunging:
+		velocity.y = PLUNGE_SPEED
+	else:
+		# Get the input direction and handle the movement/deceleration.
+		# As good practice, you should replace UI actions with custom gameplay actions.
+		var direction := Input.get_axis("left", "right")
+		if direction:
+			velocity.x = direction * SPEED
+		else:
+			velocity.x = move_toward(velocity.x, 0, SPEED)
+
+	move_and_slide()
+
+	# If we were plunging and hit the floor, stop and start cooldown
+	if is_plunging and is_on_floor():
+		is_plunging = false
+		plunge_time_left = 0.0
+		plunge_cooldown_left = PLUNGE_COOLDOWN
+		can_plunge = false
+
+	# Update sprite animation each frame
+	_update_animation()
+
+
+func _start_crouch_tween(crouch: bool) -> void:
+	# Kill any running crouch tween to avoid conflicts/flicker
+	if crouch_tween and crouch_tween.is_valid():
+		crouch_tween.kill()
+	var tween = create_tween()
+	crouch_tween = tween
+	# target values for sprite
+	var target_scale = original_sprite_scale * CROUCH_SCALE if crouch else original_sprite_scale
+	var target_sprite_pos = original_sprite_position
+	if sprite_node:
+		# if this is a `Sprite2D` we can use its texture size to compute pixel offsets
+		if sprite_node is Sprite2D and sprite_node.texture:
+			var tex_size: Vector2 = sprite_node.texture.get_size()
+			var orig_pixel_h = tex_size.y * original_sprite_scale.y
+			var delta_pixels = (orig_pixel_h - orig_pixel_h * CROUCH_SCALE) * 0.5
+			if crouch:
+				target_sprite_pos.y = original_sprite_position.y + delta_pixels
+			else:
+				target_sprite_pos.y = original_sprite_position.y
+		# animate sprite
+		tween.tween_property(sprite_node, "scale", target_scale, CROUCH_TRANSITION)
+		tween.tween_property(sprite_node, "position", target_sprite_pos, CROUCH_TRANSITION)
+
+	# Tween camera zoom so visual player size on screen remains consistent
+	if camera_node:
+		var safe_target_scale_x = target_scale.x if target_scale.x != 0 else CROUCH_SCALE
+		var target_zoom = original_camera_zoom * (original_sprite_scale.x / safe_target_scale_x)
+		if not crouch:
+			target_zoom = original_camera_zoom
+		tween.tween_property(camera_node, "zoom", target_zoom, CROUCH_TRANSITION)
+
+	# handle collision by scaling the collision node (smooth scale and move)
+	if standing_collision and standing_collision.shape:
+		var target_collision_scale = original_collision_scale * CROUCH_SCALE if crouch else original_collision_scale
+		# compute vertical offset so the bottom of the shape stays aligned
+		var delta_y = 0.0
+		if original_shape_size != Vector2.ZERO:
+			var current_scale_y = original_collision_scale.y
+			var target_scale_y = target_collision_scale.y
+			delta_y = original_shape_size.y * (current_scale_y - target_scale_y) * 0.5
+		var target_collision_pos = original_collision_position + Vector2(0, delta_y) if crouch else original_collision_position
+		tween.tween_property(standing_collision, "scale", target_collision_scale, CROUCH_TRANSITION)
+		tween.tween_property(standing_collision, "position", target_collision_pos, CROUCH_TRANSITION)
+
+	# No separate crouch collision swapping: collision follows sprite scale.
+
+	# start the tween
+	tween.play()
+
+
+func _enable_crouch_shape() -> void:
+	if standing_collision and crouch_collision:
+		standing_collision.disabled = true
+		crouch_collision.disabled = false
+
+
+func _disable_crouch_shape() -> void:
+	if standing_collision and crouch_collision:
+		standing_collision.disabled = false
+		crouch_collision.disabled = true
+
+
+func _start_plunge() -> void:
+	# Programmatic start of the plunge.
+	is_plunging = true
+	can_plunge = false
+	plunge_time_left = PLUNGE_DURATION
+	# cancel any dash in progress
+	if is_dashing:
+		is_dashing = false
+		dash_time_left = 0.0
+		dash_cooldown_left = DASH_COOLDOWN
+		can_dash = false
+	# force downward velocity
+	velocity.y = PLUNGE_SPEED
+
+	# play plunge animation immediately if present
+	if sprite_node is AnimatedSprite2D:
+		(sprite_node as AnimatedSprite2D).play("plunge")
+
+
+func plunge() -> void:
+	# Public callable API: start a plunge if allowed. No effect while crouched.
+	if not can_plunge:
+		return
+	_start_plunge()
+
+
+func _do_jump() -> void:
+	# Shared logic to begin a jump. Records crouch state for hold strength.
+	_jump_was_crouched = is_crouching
+	if is_crouching:
+		# cancel any ongoing crouch tween so we don't fight the current transform
+		if crouch_tween and crouch_tween.is_valid():
+			crouch_tween.kill()
+		# keep visual crouch and let collision follow sprite scale (no immediate restore)
+		prev_is_crouching = is_crouching
+
+	# smaller base jump when crouched
+	velocity.y = JUMP_VELOCITY_CROUCH if _jump_was_crouched else JUMP_VELOCITY
+	# begin jump hold window
+	is_holding_jump = true
+	jump_hold_time_left = JUMP_HOLD_TIME
+	# consume coyote window so we don't double-trigger
+	coyote_time_left = 0.0
+
+	# play jump animation immediately if present
+	if sprite_node is AnimatedSprite2D:
+		(sprite_node as AnimatedSprite2D).play("jump")
+
+
+func _update_animation() -> void:
+	if not sprite_node:
+		return
+
+	var anim := "idle"
+	# Priority order
+	if is_plunging:
+		anim = "plunge"
+	elif is_dashing:
+		anim = "dash"
+	elif not is_on_floor():
+		anim = "jump" if velocity.y < 0 else "fall"
+	elif is_crouching:
+		anim = "crouch"
+	elif abs(velocity.x) > 10.0:
+		anim = "walk"
+	else:
+		anim = "idle"
+
+	# AnimatedSprite2D support
+	if sprite_node is AnimatedSprite2D:
+		var a := sprite_node as AnimatedSprite2D
+		if a.animation != anim:
+			a.play(anim)
+	# AnimationPlayer support (state machine named animations)
+	elif has_node("AnimationPlayer"):
+		var ap := $AnimationPlayer
+		if ap.current_animation != anim:
+			ap.play(anim)
+
+
+func _process(delta: float) -> void:
+	# Keep camera zoom in proportion to the sprite's visual scale.
+	# Skips while a crouch tween is active to avoid fighting the tween.
+	if not camera_scale_follow_sprite:
+		return
+	if not camera_node or not sprite_node:
+		return
+	if crouch_tween and crouch_tween.is_valid():
+		return
+
+	var current_scale_x: float = sprite_node.scale.x if sprite_node.scale.x != 0 else camera_min_scale_x
+	var ratio: float = float(original_sprite_scale.x) / current_scale_x
+	var target_zoom: Vector2 = original_camera_zoom * ratio
+	var t: float = clamp(camera_scale_smoothing * delta, 0.0, 1.0)
+	camera_node.zoom = camera_node.zoom.lerp(target_zoom, t)
