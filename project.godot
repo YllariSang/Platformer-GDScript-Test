@@ -11,8 +11,9 @@ config_version=5
 [application]
 
 config/name="testproj"
-run/main_scene="uid://cu7xksxnu13xs"
+run/main_scene="uid://ckwqpft84ar0k"
 config/features=PackedStringArray("4.5", "Forward Plus")
+boot_splash/show_image=false
 config/icon="res://icon.svg"
 
 [input]

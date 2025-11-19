@@ -39,8 +39,15 @@ var crouch_tween: Tween = null
 @onready var crouch_collision: CollisionShape2D = null
 @onready var sprite_node: Node = null
 var original_sprite_scale: Vector2 = Vector2.ONE
+var facing_right: bool = true
+var is_playing_crouch_anim: bool = false
 const CROUCH_SCALE = 0.5
 const CROUCH_TRANSITION = 0.12
+const CROUCH_STATE_NONE: int = 0
+const CROUCH_STATE_ENTERING: int = 1
+const CROUCH_STATE_IN: int = 2
+const CROUCH_STATE_EXITING: int = 3
+var crouch_state: int = CROUCH_STATE_NONE
 var original_collision_position: Vector2 = Vector2.ZERO
 var original_sprite_position: Vector2 = Vector2.ZERO
 var prev_is_crouching: bool = false
@@ -166,10 +173,14 @@ func _physics_process(delta: float) -> void:
 			if velocity.y < 0.0:
 				velocity.y *= 0.6
 
-	# Handle crouch input (hold to crouch). Requires InputMap action `crouch`.
-	# Allow crouching mid-air by setting crouch directly from input hold.
-	var want_crouch := Input.is_action_pressed("crouch")
-	is_crouching = want_crouch
+	# Handle crouch input (toggle). Requires InputMap action `crouch`.
+	# Toggle crouch on press so player can hold or lock crouch.
+	if Input.is_action_just_pressed("crouch"):
+		is_crouching = not is_crouching
+		if is_crouching:
+			crouch_state = CROUCH_STATE_ENTERING
+		else:
+			crouch_state = CROUCH_STATE_EXITING
 	# Note: collision will be scaled based on sprite scale via the tween.
 	# No immediate enabling/disabling of separate crouch shapes here.
 
@@ -196,6 +207,9 @@ func _physics_process(delta: float) -> void:
 		var dir_x := 0.0
 		if input_dir != 0.0:
 			dir_x = input_dir
+		# prefer the last facing direction when no input is provided
+		elif facing_right != null:
+			dir_x = 1.0 if facing_right else -1.0
 		elif velocity.x != 0.0:
 			dir_x = sign(velocity.x)
 		else:
@@ -205,11 +219,16 @@ func _physics_process(delta: float) -> void:
 		is_dashing = true
 		can_dash = false
 		dash_time_left = DASH_DURATION
+		# update facing to match dash direction
+		_update_facing_from_dir(dir_x)
 		# Optional: cancel vertical velocity to make dash feel snappier
 		velocity.y = 0.0
 		# play dash animation immediately if present
-		if sprite_node is AnimatedSprite2D:
-			(sprite_node as AnimatedSprite2D).play("dash")
+		if not is_playing_crouch_anim:
+			if sprite_node is AnimatedSprite2D:
+				(sprite_node as AnimatedSprite2D).play("dash")
+			elif has_node("AnimationPlayer"):
+				$AnimationPlayer.play("dash")
 
 	# Movement: normal movement is disabled while dashing
 	if is_dashing:
@@ -223,6 +242,8 @@ func _physics_process(delta: float) -> void:
 		var direction := Input.get_axis("left", "right")
 		if direction:
 			velocity.x = direction * SPEED
+			# update facing when player provides horizontal input
+			_update_facing_from_dir(direction)
 		else:
 			velocity.x = move_toward(velocity.x, 0, SPEED)
 
@@ -262,6 +283,26 @@ func _start_crouch_tween(crouch: bool) -> void:
 		tween.tween_property(sprite_node, "scale", target_scale, CROUCH_TRANSITION)
 		tween.tween_property(sprite_node, "position", target_sprite_pos, CROUCH_TRANSITION)
 
+	# Ensure facing is correct immediately when crouch starts so the crouch pose is directional.
+	# Prefer current input direction, otherwise use the last known facing.
+	var input_dir := Input.get_axis("left", "right")
+	if input_dir != 0.0:
+		_update_facing_from_dir(input_dir)
+	else:
+		# apply last known facing so crouch doesn't snap to default direction
+		_update_facing_from_dir(1.0 if facing_right else -1.0)
+
+	# Play crouch animation while the visual tween is active, then restore.
+	if sprite_node is AnimatedSprite2D:
+		(sprite_node as AnimatedSprite2D).play("crouch")
+		is_playing_crouch_anim = true
+		# restore animation after the tween finishes (only for this tween)
+		_restore_after_crouch_tween(tween)
+	elif has_node("AnimationPlayer"):
+		$AnimationPlayer.play("crouch")
+		is_playing_crouch_anim = true
+		_restore_after_crouch_tween(tween)
+
 	# Tween camera zoom so visual player size on screen remains consistent
 	if camera_node:
 		var safe_target_scale_x = target_scale.x if target_scale.x != 0 else CROUCH_SCALE
@@ -271,17 +312,28 @@ func _start_crouch_tween(crouch: bool) -> void:
 		tween.tween_property(camera_node, "zoom", target_zoom, CROUCH_TRANSITION)
 
 	# handle collision by scaling the collision node (smooth scale and move)
+	# handle collision: apply immediately for responsive gameplay
+	# If there's a separate `crouch_collision` shape, swap shapes immediately.
+	# Otherwise, scale & move the standing collision immediately so physics reacts this frame.
 	if standing_collision and standing_collision.shape:
-		var target_collision_scale = original_collision_scale * CROUCH_SCALE if crouch else original_collision_scale
-		# compute vertical offset so the bottom of the shape stays aligned
-		var delta_y = 0.0
-		if original_shape_size != Vector2.ZERO:
-			var current_scale_y = original_collision_scale.y
-			var target_scale_y = target_collision_scale.y
-			delta_y = original_shape_size.y * (current_scale_y - target_scale_y) * 0.5
-		var target_collision_pos = original_collision_position + Vector2(0, delta_y) if crouch else original_collision_position
-		tween.tween_property(standing_collision, "scale", target_collision_scale, CROUCH_TRANSITION)
-		tween.tween_property(standing_collision, "position", target_collision_pos, CROUCH_TRANSITION)
+		if crouch_collision:
+			# use the separate shape nodes if provided
+			if crouch:
+				_enable_crouch_shape()
+			else:
+				_disable_crouch_shape()
+		else:
+			var target_collision_scale = original_collision_scale * CROUCH_SCALE if crouch else original_collision_scale
+			# compute vertical offset so the bottom of the shape stays aligned
+			var delta_y = 0.0
+			if original_shape_size != Vector2.ZERO:
+				var current_scale_y = original_collision_scale.y
+				var target_scale_y = target_collision_scale.y
+				delta_y = original_shape_size.y * (current_scale_y - target_scale_y) * 0.5
+			var target_collision_pos = original_collision_position + Vector2(0, delta_y) if crouch else original_collision_position
+			# apply immediately so physics sees the new hitbox this frame
+			standing_collision.scale = target_collision_scale
+			standing_collision.position = target_collision_pos
 
 	# No separate crouch collision swapping: collision follows sprite scale.
 
@@ -316,8 +368,11 @@ func _start_plunge() -> void:
 	velocity.y = PLUNGE_SPEED
 
 	# play plunge animation immediately if present
-	if sprite_node is AnimatedSprite2D:
-		(sprite_node as AnimatedSprite2D).play("plunge")
+	if not is_playing_crouch_anim:
+		if sprite_node is AnimatedSprite2D:
+			(sprite_node as AnimatedSprite2D).play("plunge")
+		elif has_node("AnimationPlayer"):
+			$AnimationPlayer.play("plunge")
 
 
 func plunge() -> void:
@@ -346,12 +401,18 @@ func _do_jump() -> void:
 	coyote_time_left = 0.0
 
 	# play jump animation immediately if present
-	if sprite_node is AnimatedSprite2D:
-		(sprite_node as AnimatedSprite2D).play("jump")
+	if not is_playing_crouch_anim:
+		if sprite_node is AnimatedSprite2D:
+			(sprite_node as AnimatedSprite2D).play("jump")
+		elif has_node("AnimationPlayer"):
+			$AnimationPlayer.play("jump")
 
 
 func _update_animation() -> void:
 	if not sprite_node:
+		return
+	# If the crouch animation is playing, it has absolute priority and we don't override it.
+	if is_playing_crouch_anim:
 		return
 
 	var anim := "idle"
@@ -362,10 +423,11 @@ func _update_animation() -> void:
 		anim = "dash"
 	elif not is_on_floor():
 		anim = "jump" if velocity.y < 0 else "fall"
+	elif abs(velocity.x) > 10.0:
+		# walking animation should be used even when crouching (crouch-walk == walk)
+		anim = "walk"
 	elif is_crouching:
 		anim = "crouch"
-	elif abs(velocity.x) > 10.0:
-		anim = "walk"
 	else:
 		anim = "idle"
 
@@ -381,6 +443,51 @@ func _update_animation() -> void:
 			ap.play(anim)
 
 
+func _update_facing_from_dir(dir_x: float) -> void:
+	# Only update when a meaningful horizontal direction is provided
+	if dir_x == 0.0:
+		return
+	var should_face_right: bool = dir_x > 0.0
+	if sprite_node is Sprite2D:
+		(sprite_node as Sprite2D).flip_h = not should_face_right
+	else:
+		# Fallback: invert local X scale while preserving magnitude (works with tweens)
+		var cur_scale: Vector2 = sprite_node.scale
+		cur_scale.x = abs(cur_scale.x) * (1.0 if should_face_right else -1.0)
+		sprite_node.scale = cur_scale
+	# record facing state
+	facing_right = should_face_right
+
+
+func _restore_after_crouch_tween(tween: Tween) -> void:
+	# Wait for this tween to finish, then restore animation state if it's still the active crouch tween.
+	# This prevents earlier/overlapped tweens from stomping newer ones.
+	await tween.finished
+	if crouch_tween != tween:
+		return
+	# If we finished entering crouch, mark state and end the crouch animation (freeze pose)
+	if is_crouching:
+		crouch_state = CROUCH_STATE_IN
+		# If moving, switch to walk (we reuse walk while crouch-walking). Otherwise stop the crouch animation so it doesn't loop.
+		if abs(velocity.x) > 10.0:
+			# clear the playing flag then update so walk can play
+			is_playing_crouch_anim = false
+			_update_animation()
+		else:
+			if sprite_node is AnimatedSprite2D:
+				(sprite_node as AnimatedSprite2D).stop()
+				is_playing_crouch_anim = false
+			elif has_node("AnimationPlayer"):
+				$AnimationPlayer.stop()
+				is_playing_crouch_anim = false
+		# keep collision/visual crouch until uncrouched
+	else:
+		# finished uncrouching
+		crouch_state = CROUCH_STATE_NONE
+		_update_animation()
+		is_playing_crouch_anim = false
+
+
 func _process(delta: float) -> void:
 	# Keep camera zoom in proportion to the sprite's visual scale.
 	# Skips while a crouch tween is active to avoid fighting the tween.
@@ -391,7 +498,10 @@ func _process(delta: float) -> void:
 	if crouch_tween and crouch_tween.is_valid():
 		return
 
-	var current_scale_x: float = sprite_node.scale.x if sprite_node.scale.x != 0 else camera_min_scale_x
+	# Use the absolute X scale so a negative sprite scale (used for flipping)
+	# does not produce a negative camera zoom which flips the whole view.
+	var cur_x: float = abs(sprite_node.scale.x)
+	var current_scale_x: float = cur_x if cur_x != 0.0 else camera_min_scale_x
 	var ratio: float = float(original_sprite_scale.x) / current_scale_x
 	var target_zoom: Vector2 = original_camera_zoom * ratio
 	var t: float = clamp(camera_scale_smoothing * delta, 0.0, 1.0)
