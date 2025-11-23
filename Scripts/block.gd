@@ -3,6 +3,7 @@ extends CharacterBody2D
 # Breakable block: breaks when hit by a player while that player is plunging
 # and not crouched. Optionally checks downward velocity to avoid accidental
 # breaks from gentle touches.
+@onready var label: Label = $"../label"
 
 # Minimum downward velocity (px/s) required to count as a break impact.
 @export var min_downward_speed: float = 300.0

@@ -4,7 +4,7 @@ var is_dashing = false
 var can_dash = true
 var dash_direction: Vector2 = Vector2.ZERO
 
-const DASH_SPEED = 900.0
+const DASH_SPEED = 1200.0
 const DASH_DURATION = 0.12
 const DASH_COOLDOWN = 0.6
 
@@ -41,6 +41,7 @@ var crouch_tween: Tween = null
 var original_sprite_scale: Vector2 = Vector2.ONE
 var facing_right: bool = true
 var is_playing_crouch_anim: bool = false
+@export var crouch_sprite_offset_y: float = 0.0
 const CROUCH_SCALE = 0.5
 const CROUCH_TRANSITION = 0.12
 const CROUCH_STATE_NONE: int = 0
@@ -269,16 +270,36 @@ func _start_crouch_tween(crouch: bool) -> void:
 	# target values for sprite
 	var target_scale = original_sprite_scale * CROUCH_SCALE if crouch else original_sprite_scale
 	var target_sprite_pos = original_sprite_position
+	# compute target collision scale & position early so we can align the sprite bottom to the collision bottom
+	var target_collision_scale: Vector2 = original_collision_scale * CROUCH_SCALE if crouch else original_collision_scale
+	var delta_y = 0.0
+	if original_shape_size != Vector2.ZERO:
+		var current_scale_y = original_collision_scale.y
+		var target_scale_y = target_collision_scale.y
+		delta_y = original_shape_size.y * (current_scale_y - target_scale_y) * 0.5
+	var target_collision_pos: Vector2 = original_collision_position + Vector2(0, delta_y) if crouch else original_collision_position
 	if sprite_node:
-		# if this is a `Sprite2D` we can use its texture size to compute pixel offsets
+		# if this is a `Sprite2D` we can use its texture size to compute the bottom offset
 		if sprite_node is Sprite2D and sprite_node.texture:
 			var tex_size: Vector2 = sprite_node.texture.get_size()
-			var orig_pixel_h = tex_size.y * original_sprite_scale.y
-			var delta_pixels = (orig_pixel_h - orig_pixel_h * CROUCH_SCALE) * 0.5
-			if crouch:
-				target_sprite_pos.y = original_sprite_position.y + delta_pixels
-			else:
-				target_sprite_pos.y = original_sprite_position.y
+			var sprite_h: float = tex_size.y
+			# Try to respect the sprite pivot if available; otherwise assume centered pivot
+			var pivot_y: float = 0.0
+			if "pivot_offset" in sprite_node:
+				pivot_y = sprite_node.pivot_offset.y
+			elif "centered" in sprite_node and sprite_node.centered:
+				pivot_y = sprite_h * 0.5
+			# compute bottom relative to node origin and align that to collision bottom
+			var bottom_local: float = (sprite_h - pivot_y) * target_scale.y
+			target_sprite_pos.y = target_collision_pos.y - bottom_local + crouch_sprite_offset_y
+		else:
+			# Fallback: use the original heuristic but allow manual offset
+			var tex_size2: Vector2 = Vector2.ZERO
+			if "texture" in sprite_node and sprite_node.texture:
+				tex_size2 = sprite_node.texture.get_size()
+			var sprite_h2: float = tex_size2.y if tex_size2 != Vector2.ZERO else (original_sprite_scale.y * 32.0)
+			var bottom_local2: float = (sprite_h2 * target_scale.y * 0.5)
+			target_sprite_pos.y = target_collision_pos.y - bottom_local2 + crouch_sprite_offset_y
 		# animate sprite
 		tween.tween_property(sprite_node, "scale", target_scale, CROUCH_TRANSITION)
 		tween.tween_property(sprite_node, "position", target_sprite_pos, CROUCH_TRANSITION)
@@ -323,15 +344,7 @@ func _start_crouch_tween(crouch: bool) -> void:
 			else:
 				_disable_crouch_shape()
 		else:
-			var target_collision_scale = original_collision_scale * CROUCH_SCALE if crouch else original_collision_scale
-			# compute vertical offset so the bottom of the shape stays aligned
-			var delta_y = 0.0
-			if original_shape_size != Vector2.ZERO:
-				var current_scale_y = original_collision_scale.y
-				var target_scale_y = target_collision_scale.y
-				delta_y = original_shape_size.y * (current_scale_y - target_scale_y) * 0.5
-			var target_collision_pos = original_collision_position + Vector2(0, delta_y) if crouch else original_collision_position
-			# apply immediately so physics sees the new hitbox this frame
+			# apply the precomputed collision target values immediately so physics sees the new hitbox this frame
 			standing_collision.scale = target_collision_scale
 			standing_collision.position = target_collision_pos
 
