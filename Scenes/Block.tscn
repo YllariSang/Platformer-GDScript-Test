@@ -1,7 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://bejhq2qqi1enn"]
+[gd_scene load_steps=5 format=3 uid="uid://etpc2i3imilk"]
 
-[ext_resource type="Texture2D" uid="uid://5nmq5c07wk76" path="res://icon.svg" id="1_ideak"]
-[ext_resource type="Script" uid="uid://cx1pxamvqi0op" path="res://Scripts/block.gd" id="2_block"]
+[ext_resource type="Script" uid="uid://cx1pxamvqi0op" path="res://Scripts/block.gd" id="1_xfwl5"]
+[ext_resource type="Texture2D" uid="uid://5nmq5c07wk76" path="res://icon.svg" id="2_5d32t"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_kh24r"]
 size = Vector2(128, 128)
@@ -10,11 +10,11 @@ size = Vector2(128, 128)
 size = Vector2(128, 163)
 
 [node name="Block" type="CharacterBody2D"]
-script = ExtResource("2_block")
+script = ExtResource("1_xfwl5")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 modulate = Color(7.70092e-07, 0.9332885, 0.38177973, 1)
-texture = ExtResource("1_ideak")
+texture = ExtResource("2_5d32t")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_kh24r")

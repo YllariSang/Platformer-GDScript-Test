@@ -1,18 +1,18 @@
-[gd_scene load_steps=10 format=3 uid="uid://drjtw7jvr6hxy"]
+[gd_scene load_steps=10 format=3 uid="uid://litm0pb4jx8c"]
 
-[ext_resource type="Script" uid="uid://cdg17agqmbs1l" path="res://Scripts/player.gd" id="1_onrkg"]
-[ext_resource type="Texture2D" uid="uid://b646leh2imcqq" path="res://Art/crouch.png" id="2_3smsa"]
-[ext_resource type="Texture2D" uid="uid://bxudxdrm0yk0s" path="res://Art/dash.png" id="3_8erm5"]
-[ext_resource type="Texture2D" uid="uid://b6iw8guhrvxox" path="res://Art/idle.png" id="4_f1ek2"]
-[ext_resource type="Texture2D" uid="uid://bae2dwu183ng5" path="res://Art/jump.png" id="5_tx1dd"]
-[ext_resource type="Texture2D" uid="uid://b0ecl5adrry2q" path="res://Art/plunge.png" id="6_gymyn"]
-[ext_resource type="Texture2D" uid="uid://fj1rg7v32mm8" path="res://Art/walk.png" id="7_pu2lt"]
+[ext_resource type="Script" uid="uid://cdg17agqmbs1l" path="res://Scripts/player.gd" id="1_1jxqw"]
+[ext_resource type="Texture2D" uid="uid://b646leh2imcqq" path="res://Art/crouch.png" id="2_dw050"]
+[ext_resource type="Texture2D" uid="uid://bxudxdrm0yk0s" path="res://Art/dash.png" id="3_b26j0"]
+[ext_resource type="Texture2D" uid="uid://b6iw8guhrvxox" path="res://Art/idle.png" id="4_n7ghd"]
+[ext_resource type="Texture2D" uid="uid://bae2dwu183ng5" path="res://Art/jump.png" id="5_nvl01"]
+[ext_resource type="Texture2D" uid="uid://b0ecl5adrry2q" path="res://Art/plunge.png" id="6_ivps1"]
+[ext_resource type="Texture2D" uid="uid://fj1rg7v32mm8" path="res://Art/walk.png" id="7_urp6f"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_ukyrk"]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("2_3smsa")
+"texture": ExtResource("2_dw050")
 }],
 "loop": true,
 "name": &"crouch",
@@ -20,7 +20,7 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("3_8erm5")
+"texture": ExtResource("3_b26j0")
 }],
 "loop": true,
 "name": &"dash",
@@ -28,7 +28,7 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("4_f1ek2")
+"texture": ExtResource("4_n7ghd")
 }],
 "loop": true,
 "name": &"idle",
@@ -36,7 +36,7 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("5_tx1dd")
+"texture": ExtResource("5_nvl01")
 }],
 "loop": true,
 "name": &"jump",
@@ -44,7 +44,7 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("6_gymyn")
+"texture": ExtResource("6_ivps1")
 }],
 "loop": true,
 "name": &"plunge",
@@ -52,7 +52,7 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("7_pu2lt")
+"texture": ExtResource("7_urp6f")
 }],
 "loop": true,
 "name": &"walk",
@@ -63,7 +63,7 @@ animations = [{
 size = Vector2(128, 128)
 
 [node name="Player" type="CharacterBody2D"]
-script = ExtResource("1_onrkg")
+script = ExtResource("1_1jxqw")
 JUMP_VELOCITY = -400.0
 
 [node name="Sprite2D" type="AnimatedSprite2D" parent="."]

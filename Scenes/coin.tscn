@@ -1,13 +1,13 @@
-[gd_scene load_steps=4 format=3 uid="uid://cicjg57midaq2"]
+[gd_scene load_steps=5 format=3 uid="uid://bf73iwth6nbef"]
 
-[ext_resource type="Texture2D" uid="uid://5nmq5c07wk76" path="res://icon.svg" id="1_2qo34"]
-[ext_resource type="Script" uid="uid://coin_script" path="res://Scripts/coin.gd" id="2_coin"]
+[ext_resource type="Script" uid="uid://crsl6jopm4yrp" path="res://Scripts/coin.gd" id="1_0t63x"]
+[ext_resource type="Texture2D" uid="uid://5nmq5c07wk76" path="res://icon.svg" id="2_v7riw"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_jgi06"]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("1_2qo34")
+"texture": ExtResource("2_v7riw")
 }],
 "loop": true,
 "name": &"default",
@@ -18,7 +18,7 @@ animations = [{
 size = Vector2(63, 63)
 
 [node name="Coin" type="Node2D"]
-script = ExtResource("2_coin")
+script = ExtResource("1_0t63x")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(-32.5, -32.5)
@@ -26,7 +26,6 @@ scale = Vector2(0.4921875, 0.4921875)
 sprite_frames = SubResource("SpriteFrames_jgi06")
 
 [node name="Area2D" type="Area2D" parent="."]
-monitoring = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
 position = Vector2(-32.5, -32.5)
