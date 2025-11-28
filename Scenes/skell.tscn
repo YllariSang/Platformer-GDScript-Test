@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://curvxdvno3ang"]
+
+[ext_resource type="Texture2D" uid="uid://cka0couxi6i5h" path="res://Art/skle.png" id="1_ujeri"]
+
+[node name="Skell" type="Node2D"]
+
+[node name="Parallax2D" type="Parallax2D" parent="."]
+scroll_scale = Vector2(0.5, 0.5)
+
+[node name="Sprite2D" type="Sprite2D" parent="Parallax2D"]
+texture = ExtResource("1_ujeri")

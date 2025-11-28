@@ -70,6 +70,9 @@ var plunge_time_left: float = 0.0
 var plunge_cooldown_left: float = 0.0
 var can_plunge: bool = true
 
+# Last safe position (used for respawning after death)
+var last_safe_position: Vector2 = Vector2.ZERO
+
 
 func _ready() -> void:
 	if has_node("CollisionShape2D"):
@@ -93,6 +96,8 @@ func _ready() -> void:
 
 	# Ensure player is in the `player` group so pressure plates detect it
 	add_to_group("player")
+	# initialize respawn point to current position
+	last_safe_position = global_position
 	if has_node("Camera2D"):
 		camera_node = $Camera2D
 		original_camera_zoom = camera_node.zoom
@@ -259,6 +264,10 @@ func _physics_process(delta: float) -> void:
 
 	# Update sprite animation each frame
 	_update_animation()
+
+	# Record last safe position when standing on the floor (simple checkpoint)
+	if is_on_floor():
+		last_safe_position = global_position
 
 
 func _start_crouch_tween(crouch: bool) -> void:
@@ -528,3 +537,28 @@ func _process(delta: float) -> void:
 	var target_zoom: Vector2 = original_camera_zoom * ratio
 	var t: float = clamp(camera_scale_smoothing * delta, 0.0, 1.0)
 	camera_node.zoom = camera_node.zoom.lerp(target_zoom, t)
+
+
+func set_checkpoint(pos: Vector2) -> void:
+	# Explicit API other nodes can call to set the player's respawn point.
+	last_safe_position = pos
+
+
+func die() -> void:
+	# Debug: announce death and target respawn
+	print("[Player] die() called. Respawning to:", last_safe_position)
+	# Teleport player back to last safe position and reset transient state
+	global_position = last_safe_position
+	velocity = Vector2.ZERO
+	is_dashing = false
+	dash_time_left = 0.0
+	dash_cooldown_left = 0.0
+	can_dash = true
+	is_plunging = false
+	plunge_time_left = 0.0
+	plunge_cooldown_left = 0.0
+	can_plunge = true
+	is_holding_jump = false
+	is_crouching = false
+	# ensure animation state is refreshed
+	_update_animation()
