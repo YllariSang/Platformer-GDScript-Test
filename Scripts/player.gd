@@ -72,6 +72,7 @@ var can_plunge: bool = true
 
 # Last safe position (used for respawning after death)
 var last_safe_position: Vector2 = Vector2.ZERO
+@onready var sfx_player: AudioStreamPlayer2D = null
 
 
 func _ready() -> void:
@@ -104,6 +105,17 @@ func _ready() -> void:
 		if camera_node and not camera_node.is_current():
 			camera_node.make_current()
 		original_camera_zoom = camera_node.zoom
+
+	# ensure an AudioStreamPlayer2D exists under the Sprite2D to play simple SFX
+	if has_node("Sprite2D"):
+		if $Sprite2D.has_node("AudioStreamPlayer2D"):
+			sfx_player = $Sprite2D.get_node("AudioStreamPlayer2D") as AudioStreamPlayer2D
+		else:
+			# create one so we can play sounds from the player
+			var ap = AudioStreamPlayer2D.new()
+			$Sprite2D.add_child(ap)
+			sfx_player = ap
+
 
 
 func _physics_process(delta: float) -> void:
@@ -345,6 +357,11 @@ func _start_crouch_tween(crouch: bool) -> void:
 		is_playing_crouch_anim = true
 		_restore_after_crouch_tween(tween)
 
+	# play crouch sfx if present
+	if sfx_player and ResourceLoader.exists("res://Assets/SFX/crouch.wav"):
+		sfx_player.stream = load("res://Assets/SFX/crouch.wav")
+		sfx_player.play()
+
 	# Tween camera zoom so visual player size on screen remains consistent
 	if camera_node:
 		var safe_target_scale_x = target_scale.x if target_scale.x != 0 else CROUCH_SCALE
@@ -408,6 +425,8 @@ func _start_plunge() -> void:
 		elif has_node("AnimationPlayer"):
 			$AnimationPlayer.play("plunge")
 
+	# optional: small plunge sound if you add one later
+
 
 func plunge() -> void:
 	# Public callable API: start a plunge if allowed. No effect while crouched.
@@ -440,6 +459,11 @@ func _do_jump() -> void:
 			(sprite_node as AnimatedSprite2D).play("jump")
 		elif has_node("AnimationPlayer"):
 			$AnimationPlayer.play("jump")
+
+	# play jump sfx if available
+	if sfx_player and ResourceLoader.exists("res://Assets/SFX/Jump.wav"):
+		sfx_player.stream = load("res://Assets/SFX/Jump.wav")
+		sfx_player.play()
 
 
 func _update_animation() -> void:
@@ -569,3 +593,24 @@ func die() -> void:
 
 func _on_sprite_2d_animation_changed() -> void:
 	pass # Replace with function body.
+
+
+func screen_shake(intensity: float = 8.0, duration: float = 0.25, step: float = 0.02) -> void:
+	# Simple camera shake that offsets the local camera position briefly.
+	if not camera_node:
+		return
+	# Ensure randomness
+	randomize()
+	var original_offset: Vector2 = camera_node.offset
+	var elapsed: float = 0.0
+	while elapsed < duration:
+		var rx = randf_range(-1.0, 1.0)
+		var ry = randf_range(-1.0, 1.0)
+		var rvec = Vector2(rx, ry)
+		if rvec.length() == 0.0:
+			rvec = Vector2(0, -1)
+		camera_node.offset = original_offset + rvec.normalized() * (intensity * randf_range(0.5, 1.0))
+		await get_tree().create_timer(step).timeout
+		elapsed += step
+	# restore
+	camera_node.offset = original_offset
