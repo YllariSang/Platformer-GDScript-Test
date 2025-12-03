@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bae2dwu183ng5"
-path="res://.godot/imported/jump.png-9efb0bf388b726d8e9f011beab39f24c.ctex"
+uid="uid://b0ecl5adrry2q"
+path="res://.godot/imported/plunge.png-ecbdee01a4669de69011ec47ac436e54.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/DEMO/jump.png"
-dest_files=["res://.godot/imported/jump.png-9efb0bf388b726d8e9f011beab39f24c.ctex"]
+source_file="res://Assets/Placeholders (old)/plunge.png"
+dest_files=["res://.godot/imported/plunge.png-ecbdee01a4669de69011ec47ac436e54.ctex"]
 
 [params]
 

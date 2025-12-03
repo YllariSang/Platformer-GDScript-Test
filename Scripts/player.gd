@@ -1,5 +1,7 @@
 extends CharacterBody2D
 
+signal crouch_toggled(new_state: bool)
+
 var is_dashing = false
 var can_dash = true
 var dash_direction: Vector2 = Vector2.ZERO
@@ -74,6 +76,9 @@ var can_plunge: bool = true
 # Last safe position (used for respawning after death)
 var last_safe_position: Vector2 = Vector2.ZERO
 @onready var sfx_player: AudioStreamPlayer2D = null
+
+var _input_was_enabled: bool = true
+var _paused_for_dialogue: bool = false
 
 
 func _ready() -> void:
@@ -216,6 +221,8 @@ func _physics_process(delta: float) -> void:
 			crouch_state = CROUCH_STATE_ENTERING
 		else:
 			crouch_state = CROUCH_STATE_EXITING
+		# Notify listeners (e.g. springs) that crouch state changed
+		emit_signal("crouch_toggled", is_crouching)
 	# Note: collision will be scaled based on sprite scale via the tween.
 	# No immediate enabling/disabling of separate crouch shapes here.
 
@@ -264,6 +271,11 @@ func _physics_process(delta: float) -> void:
 				(sprite_node as AnimatedSprite2D).play("dash")
 			elif has_node("AnimationPlayer"):
 				$AnimationPlayer.play("dash")
+
+			# play dash sfx if available
+			if sfx_player and ResourceLoader.exists("res://Assets/Audio/SFX/dash.wav"):
+				sfx_player.stream = load("res://Assets/Audio/SFX/dash.wav")
+				sfx_player.play()
 
 	# Movement: normal movement is disabled while dashing
 	if is_dashing:
@@ -376,8 +388,8 @@ func _start_crouch_tween(crouch: bool) -> void:
 		_restore_after_crouch_tween(tween)
 
 	# play crouch sfx if present
-	if sfx_player and ResourceLoader.exists("res://Assets/SFX/crouch.wav"):
-		sfx_player.stream = load("res://Assets/SFX/crouch.wav")
+	if sfx_player and ResourceLoader.exists("res://Assets/Audio/SFX/crouch.wav"):
+		sfx_player.stream = load("res://Assets/Audio/SFX/crouch.wav")
 		sfx_player.play()
 
 	# Tween camera zoom so visual player size on screen remains consistent
@@ -479,8 +491,8 @@ func _do_jump() -> void:
 			$AnimationPlayer.play("jump")
 
 	# play jump sfx if available
-	if sfx_player and ResourceLoader.exists("res://Assets/SFX/Jump.wav"):
-		sfx_player.stream = load("res://Assets/SFX/Jump.wav")
+	if sfx_player and ResourceLoader.exists("res://Assets/Audio/SFX/Jump.wav"):
+		sfx_player.stream = load("res://Assets/Audio/SFX/Jump.wav")
 		sfx_player.play()
 
 
@@ -545,6 +557,27 @@ func set_input_enabled(enabled: bool) -> void:
 		dash_time_left = 0.0
 		is_plunging = false
 		plunge_time_left = 0.0
+
+
+func pause_for_dialogue() -> void:
+	# Disable player controls for dialogue without canceling dash/plunge timers.
+	if _paused_for_dialogue:
+		return
+	_input_was_enabled = input_enabled
+	# Stop horizontal movement immediately so player doesn't slide away during dialogue.
+	velocity.x = 0.0
+	# Disable input so player cannot issue new actions, but DO NOT modify dash/plunge
+	# state variables or cooldowns so transient actions continue their timing.
+	input_enabled = false
+	_paused_for_dialogue = true
+
+
+func resume_after_dialogue() -> void:
+	# Restore input state previously saved by `pause_for_dialogue()`.
+	if not _paused_for_dialogue:
+		return
+	input_enabled = _input_was_enabled
+	_paused_for_dialogue = false
 
 
 func _restore_after_crouch_tween(tween: Tween) -> void:

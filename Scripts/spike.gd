@@ -14,6 +14,28 @@ func _on_body_entered(body: Node) -> void:
     print("[Spike] body entered:", body)
     if body and body.is_in_group("player"):
         print("[Spike] hit player")
+        # play a hit SFX at the spike's position if available
+        var sfx_path := "res://Assets/Audio/SFX/spikehit1.wav"
+        if ResourceLoader.exists(sfx_path):
+            var root = get_tree().get_current_scene()
+            if not root:
+                root = get_tree().get_root()
+            var ap := AudioStreamPlayer2D.new()
+            ap.stream = load(sfx_path)
+            ap.global_position = global_position
+            root.add_child(ap)
+            ap.play()
+            var cleanup_t := Timer.new()
+            cleanup_t.one_shot = true
+            var sfx_len := 1.0
+            if ap.stream and ap.stream.has_method("get_length"):
+                sfx_len = ap.stream.get_length()
+            cleanup_t.wait_time = sfx_len + 0.1
+            root.add_child(cleanup_t)
+            cleanup_t.start()
+            cleanup_t.timeout.connect(Callable(ap, "queue_free"))
+            cleanup_t.timeout.connect(Callable(cleanup_t, "queue_free"))
+
         if body.has_method("die"):
             body.die()
         else:

@@ -2,13 +2,13 @@
 
 importer="wav"
 type="AudioStreamWAV"
-uid="uid://bblvf37y7b6ax"
-path="res://.godot/imported/crouch.wav-6eaf50a54501619c1f3bf49d807884f4.sample"
+uid="uid://tuiq0guevdhw"
+path="res://.godot/imported/Pickup.wav-a8396633242df6ef9e67f5b937764c71.sample"
 
 [deps]
 
-source_file="res://Assets/SFX/crouch.wav"
-dest_files=["res://.godot/imported/crouch.wav-6eaf50a54501619c1f3bf49d807884f4.sample"]
+source_file="res://Assets/Audio/SFX/Pickup.wav"
+dest_files=["res://.godot/imported/Pickup.wav-a8396633242df6ef9e67f5b937764c71.sample"]
 
 [params]
 

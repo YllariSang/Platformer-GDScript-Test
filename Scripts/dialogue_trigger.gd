@@ -29,7 +29,6 @@ func _on_body_entered(body: Node) -> void:
 
 	# Detect player by group (player.gd already adds the player to 'player')
 	if body and body.is_in_group("player"):
-		_triggered = true
 		print("DialogueTrigger: player entered at", body.global_position)
 
 		# Try several places to find the DialogManager: autoload at /root, current scene, or anywhere in the tree.
@@ -41,17 +40,22 @@ func _on_body_entered(body: Node) -> void:
 		if dm == null:
 			dm = _find_node_by_name_recursive(get_tree().root, "DialogManager")
 
+		var did_fire: bool = false
 		if dm and dm.has_method("show_dialogue"):
 			print("DialogueTrigger: calling DialogManager.show_dialogue()")
 			dm.show_dialogue(dialogue_text)
+			did_fire = true
 		else:
-			print("DialogueTrigger: DialogManager not found; emitted signal instead")
+			print("DialogueTrigger: DialogManager not found; will emit signal instead")
+			# Emit signal for other systems to listen (fallback)
+			emit_signal("triggered", dialogue_text)
+			did_fire = true
 
-		# Emit signal for other systems to listen (fallback)
-		emit_signal("triggered", dialogue_text)
-
-		if only_once:
-			queue_free()
+		# Only mark as triggered / free the node if we actually fired the dialogue
+		if did_fire:
+			_triggered = true
+			if only_once:
+				queue_free()
 
 
 func _find_node_by_name_recursive(node: Node, target_name: String) -> Node:

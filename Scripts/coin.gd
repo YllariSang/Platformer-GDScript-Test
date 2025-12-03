@@ -41,7 +41,7 @@ func _on_body_entered(body: Node) -> void:
 		push_warning("Coin pickup: no Game node with add_coin() found")
 
 	# Play pickup SFX at the coin's position (create a short-lived player under the current scene)
-	var sfx_path := "res://Assets/SFX/Pickup.wav"
+	var sfx_path := "res://Assets/Audio/SFX/Pickup.wav"
 	if ResourceLoader.exists(sfx_path):
 		var root = get_tree().get_current_scene()
 		if not root:

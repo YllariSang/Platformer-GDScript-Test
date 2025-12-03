@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b6iw8guhrvxox"
-path="res://.godot/imported/idle.png-09cfdd8d08a54e63d770db4eda3e6b9b.ctex"
+uid="uid://bj0npeisl3l28"
+path="res://.godot/imported/THE_MIKU.png-7624c084b681bbb208c4c324de4add4a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/DEMO/idle.png"
-dest_files=["res://.godot/imported/idle.png-09cfdd8d08a54e63d770db4eda3e6b9b.ctex"]
+source_file="res://Assets/THE_MIKU.png"
+dest_files=["res://.godot/imported/THE_MIKU.png-7624c084b681bbb208c4c324de4add4a.ctex"]
 
 [params]
 

@@ -79,7 +79,7 @@ func _on_hitbox_body_entered(body: Node) -> void:
 		timer.start()
 		timer.timeout.connect(Callable(container, "queue_free"))
 		# play break sound if available: create AudioStreamPlayer2D in the container
-		var sfx_path := "res://Assets/SFX/blockbreak.wav"
+		var sfx_path := "res://Assets/Audio/SFX/blockbreak.wav"
 		if ResourceLoader.exists(sfx_path):
 			var ap := AudioStreamPlayer2D.new()
 			ap.stream = load(sfx_path)

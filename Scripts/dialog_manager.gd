@@ -50,8 +50,12 @@ func show_dialogue(text: String, typing_speed := 0.0, disable_player_input := tr
 		# If players exist in the scene, disable their input so they stop acting.
 		players = get_tree().get_nodes_in_group("player")
 		for p in players:
-			if p and p.has_method("set_input_enabled"):
-				p.set_input_enabled(false)
+			if p:
+				# Prefer a conservative pause that preserves action timers if available
+				if p.has_method("pause_for_dialogue"):
+					p.pause_for_dialogue()
+				elif p.has_method("set_input_enabled"):
+					p.set_input_enabled(false)
 
 	emit_signal("dialogue_started", text)
 
@@ -91,8 +95,12 @@ func show_dialogue(text: String, typing_speed := 0.0, disable_player_input := tr
 	# Re-enable player input (only if we disabled it)
 	if disable_input:
 		for p2 in players:
-			if p2 and p2.has_method("set_input_enabled"):
-				p2.set_input_enabled(true)
+			if p2:
+				# Prefer a conservative resume if available
+				if p2.has_method("resume_after_dialogue"):
+					p2.resume_after_dialogue()
+				elif p2.has_method("set_input_enabled"):
+					p2.set_input_enabled(true)
 
 func _wait_for_accept() -> void:
 	# Wait until either keyboard confirm is pressed or the user clicks/touches anywhere.
