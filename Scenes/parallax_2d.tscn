@@ -1,8 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://dviv3oebnv2kw"]
-
-[ext_resource type="Texture2D" uid="uid://b3anrnodtymps" path="res://Assets/Cthl.png" id="1_yn5wd"]
-
-[node name="Parallax2D" type="Parallax2D"]
-
-[node name="Sprite2D" type="Sprite2D" parent="."]
-texture = ExtResource("1_yn5wd")

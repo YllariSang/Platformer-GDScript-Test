@@ -145,6 +145,8 @@ func _physics_process(delta: float) -> void:
 	# Add the gravity.
 	if not is_on_floor():
 		velocity += get_gravity() * delta
+		# Cap fall velocity to prevent infinite buildup when stuck
+		velocity.y = min(velocity.y, 1000.0)
 
 	# Update dash timers
 	if dash_time_left > 0.0:

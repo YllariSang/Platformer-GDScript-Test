@@ -1,0 +1,26 @@
+[gd_scene load_steps=4 format=3 uid="uid://bg6076olmstwj"]
+
+[ext_resource type="Texture2D" uid="uid://b7icociieana7" path="res://Assets/tech.png" id="1_xccmi"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_arlf3"]
+size = Vector2(192, 63.875)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_51xct"]
+size = Vector2(64, 64)
+
+[node name="TechPlat" type="AnimatableBody2D"]
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("1_xccmi")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -32)
+shape = SubResource("RectangleShape2D_arlf3")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="."]
+position = Vector2(-64, 32)
+shape = SubResource("RectangleShape2D_51xct")
+
+[node name="CollisionShape2D3" type="CollisionShape2D" parent="."]
+position = Vector2(64, 32)
+shape = SubResource("RectangleShape2D_51xct")
