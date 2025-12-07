@@ -84,16 +84,9 @@ var has_checkpoint: bool = false
 var _input_was_enabled: bool = true
 var _paused_for_dialogue: bool = false
 
-# Mobile controls reference
-var mobile_controls: Node = null
-
-
 func _ready() -> void:
-	# Try to find mobile controls
-	mobile_controls = get_node_or_null("/root/MobileControls")
-	if not mobile_controls:
-		# Try to find in current scene
-		mobile_controls = get_tree().root.get_node_or_null("MobileControls")
+	# Try to find mobile controls (optional)
+	# Not required when using TouchScreenButton actions
 	if has_node("CollisionShape2D"):
 		standing_collision = $CollisionShape2D
 		# record original shape size if it's a RectangleShape2D
@@ -147,40 +140,22 @@ func _ready() -> void:
 
 # Helper functions for mobile + keyboard input
 func _get_move_axis() -> float:
-	var keyboard = Input.get_axis("left", "right")
-	if mobile_controls and mobile_controls.has_method("get_movement_direction"):
-		var mobile = mobile_controls.get_movement_direction()
-		return mobile if mobile != 0.0 else keyboard
-	return keyboard
+	return Input.get_axis("left", "right")
 
 func _is_jump_just_pressed() -> bool:
-	var keyboard = Input.is_action_just_pressed("ui_accept")
-	if mobile_controls and mobile_controls.has_method("is_jump_pressed"):
-		return keyboard or mobile_controls.is_jump_pressed()
-	return keyboard
+	return Input.is_action_just_pressed("ui_accept")
 
 func _is_jump_pressed() -> bool:
-	var keyboard = Input.is_action_pressed("ui_accept")
-	if mobile_controls and mobile_controls.has_method("is_jump_pressed"):
-		return keyboard or mobile_controls.is_jump_pressed()
-	return keyboard
+	return Input.is_action_pressed("ui_accept")
 
 func _is_jump_just_released() -> bool:
-	var keyboard = Input.is_action_just_released("ui_accept")
-	# For mobile, we can't easily detect "just released" so rely on keyboard
-	return keyboard
+	return Input.is_action_just_released("ui_accept")
 
 func _is_dash_just_pressed() -> bool:
-	var keyboard = Input.is_action_just_pressed("dash")
-	if mobile_controls and mobile_controls.has_method("is_dash_pressed"):
-		return keyboard or mobile_controls.is_dash_pressed()
-	return keyboard
+	return Input.is_action_just_pressed("dash")
 
 func _is_crouch_just_pressed() -> bool:
-	var keyboard = Input.is_action_just_pressed("crouch")
-	if mobile_controls and mobile_controls.has_method("is_crouch_pressed"):
-		return keyboard or mobile_controls.is_crouch_pressed()
-	return keyboard
+	return Input.is_action_just_pressed("crouch")
 
 
 func _physics_process(delta: float) -> void:

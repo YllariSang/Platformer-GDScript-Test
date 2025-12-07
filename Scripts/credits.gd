@@ -6,6 +6,7 @@ extends Control
 @onready var ending_art: TextureRect = $VBoxContainer/EndingArt
 @onready var scroll_container: ScrollContainer = $VBoxContainer/ScrollContainer
 @onready var music_player: AudioStreamPlayer = $Music
+@onready var back_button: Button = $BackButton
 
 func _ready() -> void:
 	Transition.fade_in()
@@ -15,6 +16,9 @@ func _ready() -> void:
 	_display_credits()
 	_hide_scrollbars()
 	_start_autoscroll()
+	# Show a back button on mobile/touch devices for exiting credits
+	back_button.visible = DisplayServer.is_touchscreen_available()
+	back_button.pressed.connect(_return_to_menu)
 
 func _display_credits() -> void:
 	var percentage = Game.get_submission_percentage()
@@ -93,10 +97,13 @@ func _hide_scrollbars() -> void:
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		var am = _get_audio_manager()
-		if am:
-			am.play("menu")
-		Transition.fade_and_change_scene("res://Scenes/menu.tscn")
+		_return_to_menu()
+
+func _return_to_menu() -> void:
+	var am = _get_audio_manager()
+	if am:
+		am.play("menu")
+	Transition.fade_and_change_scene("res://Scenes/menu.tscn")
 
 func _get_audio_manager():
 	return get_node_or_null("/root/AudioManager")

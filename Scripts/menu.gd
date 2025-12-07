@@ -74,6 +74,12 @@ func _find_texturerect_recursive(node: Node) -> TextureRect:
 
 func _on_play_pressed() -> void:
 	if play_scene:
+		# Reset game state for a new game
+		Game.coins = 0
+		Game.fragments = 0
+		Game.fragments_submitted = 0
+		Game.suppress_jump = false
+		
 		# Tell the AudioManager to switch to game music (if present)
 		if get_tree().root.has_node("AudioManager"):
 			get_tree().root.get_node("AudioManager").play("game")

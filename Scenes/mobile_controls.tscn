@@ -1,6 +1,21 @@
-[gd_scene load_steps=2 format=3 uid="uid://mobile_controls"]
+[gd_scene load_steps=11 format=3 uid="uid://b2geeg7kbii7r"]
 
-[ext_resource type="Script" path="res://Scripts/mobile_controls.gd" id="1"]
+[ext_resource type="Script" uid="uid://dyjoi3s63h1lv" path="res://Scripts/mobile_controls.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://4etndjp0sqmc" path="res://Assets/Mobile Buttons/left.png" id="2_shlhg"]
+[ext_resource type="Texture2D" uid="uid://c7x4y8k7hs0k8" path="res://Assets/Mobile Buttons/right.png" id="3_k0vrn"]
+[ext_resource type="Texture2D" uid="uid://qxdhhfutbpjj" path="res://Assets/Mobile Buttons/jump.png" id="4_md083"]
+[ext_resource type="Texture2D" uid="uid://c3upig0eihuqq" path="res://Assets/Mobile Buttons/dash.png" id="5_uhutp"]
+[ext_resource type="Texture2D" uid="uid://dgugllyjnvlhh" path="res://Assets/Mobile Buttons/crouch.png" id="6_8jnog"]
+[ext_resource type="Texture2D" uid="uid://cf5k3ni1lvxaq" path="res://Assets/Mobile Buttons/plunge.png" id="7_n67iu"]
+
+[sub_resource type="RectangleShape2D" id="1_rect_left"]
+size = Vector2(150, 150)
+
+[sub_resource type="RectangleShape2D" id="1_rect_right"]
+size = Vector2(150, 150)
+
+[sub_resource type="RectangleShape2D" id="1_rect_plunge"]
+size = Vector2(150, 150)
 
 [node name="MobileControls" type="CanvasLayer"]
 layer = 100
@@ -15,156 +30,50 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="LeftArea" type="ColorRect" parent="Control"]
-layout_mode = 1
-anchors_preset = 4
-anchor_top = 0.5
-anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = -150.0
-offset_right = 170.0
-offset_bottom = -20.0
-grow_vertical = 0
-color = Color(0.2, 0.2, 0.2, 0.3)
+[node name="Left" type="TouchScreenButton" parent="Control"]
+modulate = Color(0.7647059, 0.7647059, 0.7647059, 0.56078434)
+position = Vector2(40, 456)
+texture_normal = ExtResource("2_shlhg")
+shape = SubResource("1_rect_left")
+action = "left"
+visibility_mode = 1
 
-[node name="LeftLabel" type="Label" parent="Control/LeftArea"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -12.0
-offset_right = 20.0
-offset_bottom = 12.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "◄"
-horizontal_alignment = 1
-vertical_alignment = 1
+[node name="Right" type="TouchScreenButton" parent="Control"]
+modulate = Color(0.7647059, 0.7647059, 0.7647059, 0.56078434)
+position = Vector2(296, 456)
+texture_normal = ExtResource("3_k0vrn")
+shape = SubResource("1_rect_left")
+action = "right"
+visibility_mode = 1
 
-[node name="RightArea" type="ColorRect" parent="Control"]
-layout_mode = 1
-anchors_preset = 4
-anchor_top = 0.5
-anchor_bottom = 1.0
-offset_left = 190.0
-offset_top = -150.0
-offset_right = 340.0
-offset_bottom = -20.0
-grow_vertical = 0
-color = Color(0.2, 0.2, 0.2, 0.3)
+[node name="Jump" type="TouchScreenButton" parent="Control"]
+modulate = Color(0.7647059, 0.7647059, 0.7647059, 0.56078434)
+position = Vector2(960, 456)
+texture_normal = ExtResource("4_md083")
+shape = SubResource("1_rect_right")
+action = "ui_accept"
+visibility_mode = 1
 
-[node name="RightLabel" type="Label" parent="Control/RightArea"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -12.0
-offset_right = 20.0
-offset_bottom = 12.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "►"
-horizontal_alignment = 1
-vertical_alignment = 1
+[node name="Dash" type="TouchScreenButton" parent="Control"]
+modulate = Color(0.7647059, 0.7647059, 0.7647059, 0.56078434)
+position = Vector2(960, 296)
+texture_normal = ExtResource("5_uhutp")
+shape = SubResource("1_rect_right")
+action = "dash"
+visibility_mode = 1
 
-[node name="JumpButton" type="ColorRect" parent="Control"]
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -170.0
-offset_top = -370.0
-offset_right = -20.0
-offset_bottom = -250.0
-grow_horizontal = 0
-grow_vertical = 0
-color = Color(0.3, 0.6, 0.3, 0.3)
+[node name="Crouch" type="TouchScreenButton" parent="Control"]
+modulate = Color(0.7647059, 0.7647059, 0.7647059, 0.56078434)
+position = Vector2(792, 296)
+texture_normal = ExtResource("6_8jnog")
+shape = SubResource("1_rect_right")
+action = "crouch"
+visibility_mode = 1
 
-[node name="Label" type="Label" parent="Control/JumpButton"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -40.0
-offset_top = -12.0
-offset_right = 40.0
-offset_bottom = 12.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "JUMP"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="DashButton" type="ColorRect" parent="Control"]
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -170.0
-offset_top = -230.0
-offset_right = -20.0
-offset_bottom = -110.0
-grow_horizontal = 0
-grow_vertical = 0
-color = Color(0.6, 0.3, 0.3, 0.3)
-
-[node name="Label" type="Label" parent="Control/DashButton"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -40.0
-offset_top = -12.0
-offset_right = 40.0
-offset_bottom = 12.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "DASH"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="CrouchButton" type="ColorRect" parent="Control"]
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -170.0
-offset_top = -90.0
-offset_right = -20.0
-offset_bottom = -20.0
-grow_horizontal = 0
-grow_vertical = 0
-color = Color(0.3, 0.3, 0.6, 0.3)
-
-[node name="Label" type="Label" parent="Control/CrouchButton"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -40.0
-offset_top = -12.0
-offset_right = 40.0
-offset_bottom = 12.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "CROUCH"
-horizontal_alignment = 1
-vertical_alignment = 1
+[node name="Plunge" type="TouchScreenButton" parent="Control"]
+modulate = Color(0.7647059, 0.7647059, 0.7647059, 0.56078434)
+position = Vector2(792, 456)
+texture_normal = ExtResource("7_n67iu")
+shape = SubResource("1_rect_plunge")
+action = "plunge"
+visibility_mode = 1

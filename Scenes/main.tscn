@@ -36,7 +36,7 @@
 [ext_resource type="Texture2D" uid="uid://bcvgqggn7y4rj" path="res://Assets/baby-blue-color-solid-background-1920x1080 (1).png" id="35_hdf80"]
 [ext_resource type="Texture2D" uid="uid://fk58s6e858sb" path="res://Assets/cloud2.png" id="36_536cc"]
 [ext_resource type="PackedScene" uid="uid://bm01xfbll11gv" path="res://Scenes/submission_terminal.tscn" id="37_jwpg7"]
-[ext_resource type="PackedScene" path="res://Scenes/mobile_controls.tscn" id="37_k2e45"]
+[ext_resource type="PackedScene" uid="uid://b2geeg7kbii7r" path="res://Scenes/mobile_controls.tscn" id="37_k2e45"]
 
 [sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_jkdf5"]
 polygon = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
@@ -920,7 +920,7 @@ position = Vector2(15023.999, 7310)
 scale = Vector2(3.107639, 3.107639)
 
 [node name="Player" parent="." instance=ExtResource("2_7mycd")]
-position = Vector2(-3913, 447)
+position = Vector2(-3948, 449)
 JUMP_VELOCITY = -550.0
 crouch_sprite_offset_y = 14.8
 PLUNGE_DURATION = 10000.0
