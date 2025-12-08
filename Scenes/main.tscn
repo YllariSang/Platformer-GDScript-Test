@@ -3786,7 +3786,7 @@ scale = Vector2(1.7631578, 1.7631578)
 texture = ExtResource("11_d1ilt")
 
 [node name="Dsgh" type="Sprite2D" parent="Texts"]
-position = Vector2(-2118, 4657)
+position = Vector2(-2089.0002, 4657.0005)
 scale = Vector2(2.0473897, 2.0473897)
 texture = ExtResource("8_6iyac")
 
