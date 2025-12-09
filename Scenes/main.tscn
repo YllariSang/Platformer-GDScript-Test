@@ -920,7 +920,7 @@ position = Vector2(15023.999, 7310)
 scale = Vector2(3.107639, 3.107639)
 
 [node name="Player" parent="." instance=ExtResource("2_7mycd")]
-position = Vector2(-3948, 449)
+position = Vector2(14903, 6908)
 JUMP_VELOCITY = -550.0
 crouch_sprite_offset_y = 14.8
 PLUNGE_DURATION = 10000.0

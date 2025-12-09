@@ -4,7 +4,7 @@
 
 ## Overview
 
-This Privacy Policy explains how [Your Name/Your Team] ("we," "us," "our," or "Company") handles information for our mobile game (the "App"). We are committed to protecting your privacy and ensuring you have a positive experience on our App.
+This Privacy Policy explains how 502A handles information for our mobile game Crescere. We are committed to protecting your privacy and ensuring you have a positive experience on our Game.
 
 ## Information We Collect
 
@@ -40,9 +40,11 @@ This is a student project developed for educational purposes as part of a third-
 
 For any questions about this Privacy Policy, please contact:
 
-**[Your Name/Team Name]**
-[Your Email Address]
+Shawn Ashleigh Yllaris M. Cruz
+yllaris1004@gmail.com
 
 ---
 
 **Note:** This game is an educational project and is not intended for commercial purposes.
+
+
